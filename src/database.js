@@ -57,8 +57,6 @@ db.serialize(() => {
         `CREATE TABLE IF NOT EXISTS audit_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         action TEXT,
-        entity TEXT,
-        entity_id INTEGER,
         timestamp TEXT,
         details TEXT
         )`  

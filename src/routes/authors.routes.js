@@ -3,9 +3,11 @@ const db = require('../database');
 
 const authorsRoute = express.Router();
 require('dotenv').config();
+const audit_log = require('./audit_logs');
 
 // get authors route
 authorsRoute.get('/authors', (req, res) => {
+    audit_log('fetch authors', 'fetched all authors');
     db.all('SELECT * FROM authors', (err, rows) => {
         if(err) {
             return res.status(400).json({
@@ -20,6 +22,7 @@ authorsRoute.get('/authors', (req, res) => {
 // get author by id
 authorsRoute.get('/authors/:id', (req, res) => {
     const id = req.params.id;
+    audit_log('fetched author', 'fetched author with id: ' + id);
 
     db.get(
         'SELECT * FROM authors WHERE id = ?',
@@ -47,6 +50,7 @@ authorsRoute.get('/authors/:id', (req, res) => {
 // create author with unique id and passcode to give access to create author
 authorsRoute.post('/authors', (req, res) => {
     const {name, bio, passcode} = req.body;
+    audit_log('create author', 'author create function called with name:' + name);
 
     if(passcode !== process.env.ADMIN_PASSWORD) {
         return res.status(404).json({
@@ -85,6 +89,7 @@ authorsRoute.post('/authors', (req, res) => {
 // edit author info with admin passcode
 authorsRoute.patch('/authors', (req, res) => {
     const {id, passcode, name, bio} = req.body;
+    audit_log('Edit author', 'Edit author function called with id: ' + id);
 
     if(!id || !passcode || !name || !bio) {
         return res.status(400).json({
@@ -138,6 +143,7 @@ authorsRoute.patch('/authors', (req, res) => {
 // delete author with admin passcode
 authorsRoute.delete('/authors', (req, res) => {
     const {id, passcode} = req.body;
+    audit_log('Delete author', 'author delete function called with id: ' + id);
 
     if(!id || !passcode) {
         if(!id) return res.status(404).json({message: "Id not found", status: 0});
