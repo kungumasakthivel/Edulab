@@ -12,9 +12,11 @@ app.use(bodyParser.json());
 const usersRoute = require('./routes/users.routes');
 const booksRoute = require('./routes/books.routes');
 const authorsRoute = require('./routes/authors.routes');
+const borrowBooks = require('./routes/borrowing.routes');
 app.use('/', usersRoute);
 app.use('/', booksRoute);
 app.use('/', authorsRoute);
+app.use('/', borrowBooks);
 
 app.get('/test', (req,res) => {
     return res.send("API working");
