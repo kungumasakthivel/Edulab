@@ -3,6 +3,7 @@ const db = require('../database');
 
 const borrowRoute = express.Router();
 require('dotenv').config();
+const audit_log = require('./audit_logs');
 
 function borrowBook(id, user_id, borrow_date, due_date) {
     const result = db.run(
@@ -47,6 +48,7 @@ function returnBook(id, return_date) {
 
 // check book is availabel
 borrowRoute.get('/available-books', (req, res) => {
+    audit_log('Checked Books', 'checked all availabe books');
 
     db.all(
         'SELECT id, title, available_copies FROM books WHERE available_copies > 1',
@@ -74,6 +76,7 @@ borrowRoute.get('/available-books', (req, res) => {
 borrowRoute.get('/available-books/:id', (req, res) => {
 
     const id = req.params.id;
+    audit_log('Checked book', 'checked book with id: ' + id);
 
     db.get(
         'SELECT id, title, available_copies FROM books WHERE id = ? AND available_copies > 1',
@@ -101,6 +104,10 @@ borrowRoute.get('/available-books/:id', (req, res) => {
 // increase available book copies
 borrowRoute.patch('/available-books', (req, res) => {
     const {id, available_copies, passcode} = req.body;
+    audit_log(
+        'Custom available copies set',
+        'seting available copies with available_copies: ' + available_copies
+    );
 
     if(passcode !== process.env.ADMIN_PASSWORD) {
         return res.status(404).json({
@@ -155,6 +162,7 @@ borrowRoute.patch('/available-books', (req, res) => {
 // borrow book
 borrowRoute.patch('/borrow-book', (req, res) => {
     const {id, passcode, user_id, borrow_date, due_date} = req.body;
+    audit_log('Borrowing Book', 'Borrowed book with id: ' + id);
 
     if(passcode !== process.env.ADMIN_PASSWORD) {
         return res.status(404).json({
@@ -212,6 +220,7 @@ borrowRoute.patch('/borrow-book', (req, res) => {
 // return book, increase book count
 borrowRoute.patch('/return-book', (req, res) => {
     const {id, passcode, return_date} = req.body;
+    audit_log('Returned Book', 'Returned book with id: ' + id);
     
     if(passcode !== process.env.ADMIN_PASSWORD) {
         return res.status(404).json({

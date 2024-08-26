@@ -2,9 +2,11 @@ const express = require('express');
 const db = require('../database');
 
 const usersRoute = express.Router();
+const audit_log = require('./audit_logs');
 
 // get all users 
 usersRoute.get('/users', (req, res) => {
+    audit_log('fetched', 'all users are fetched by user')
     db.all(`SELECT * FROM users`, (err, rows) => {
         if(err) {
             return res.send(400).json({
@@ -19,7 +21,7 @@ usersRoute.get('/users', (req, res) => {
 // get user by id
 usersRoute.get('/users/:id', (req, res) => {
     const id = req.params.id;
-
+    audit_log('fetched', 'sent user with id: ' + id);
     db.get(
         `SELECT * FROM users WHERE id = ?`,
         [id],
@@ -44,6 +46,8 @@ usersRoute.get('/users/:id', (req, res) => {
 // create new user
 usersRoute.post('/users', (req, res) => {
     const {username, email} = req.body;
+
+    audit_log('User Created', 'Create user action requested');
     
     db.get(`SELECT * FROM users WHERE username = ? OR email = ?`, [username, email], (err, user) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -81,12 +85,14 @@ usersRoute.post('/users', (req, res) => {
             message: 'user created successfully',
             status: 1
         });
-    })
+    });
 });
 
 // delete user
 usersRoute.delete('/users', (req, res) => {
     const {email} = req.body;
+
+    audit_log('Delete user', 'Delete action requested for email: ' + email);
 
     db.run(
         `DELETE FROM users WHERE email = ?`,

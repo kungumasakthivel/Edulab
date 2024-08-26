@@ -14,11 +14,14 @@ const booksRoute = require('./routes/books.routes');
 const authorsRoute = require('./routes/authors.routes');
 const borrowBooks = require('./routes/borrowing.routes');
 const recordRoute = require('./routes/records.routes');
+const auditRoute = require('./routes/audit.routes')
+
 app.use('/', usersRoute);
 app.use('/', booksRoute);
 app.use('/', authorsRoute);
 app.use('/', borrowBooks);
 app.use('/', recordRoute);
+app.use('/', auditRoute);
 
 app.get('/test', (req,res) => {
     return res.send("API working");

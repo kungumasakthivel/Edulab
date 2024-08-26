@@ -3,9 +3,11 @@ const db = require('../database');
 
 const booksRoute = express.Router();
 require('dotenv').config();
+const audit_log = require('./audit_logs');
 
 // get all books
 booksRoute.get('/books', (req, res) => {
+    audit_log('fetch books', 'fetched all books');
     db.all(`SELECT * FROM books`, (err, rows) => {
         if(err) {
             return res.status(400).json({
@@ -20,6 +22,8 @@ booksRoute.get('/books', (req, res) => {
 // get books by id
 booksRoute.get('/books/:id', (req, res) => {
     const id = req.params.id;
+
+    audit_log('fetched book', 'fetched book with id: ' + id);
 
     db.get(`SELECT * FROM books WHERE id = ?`, [id], (err, row) => {
         if(err) {
@@ -41,6 +45,8 @@ booksRoute.get('/books/:id', (req, res) => {
 // create a new book
 booksRoute.post('/books', (req, res) => {
     const {title, author_id, published_date, available_copies} = req.body;
+
+    audit_log('creat book', 'create book function called');
 
     db.run(`
         INSERT INTO books (title, author_id, published_date, available_copies)
@@ -66,6 +72,8 @@ booksRoute.post('/books', (req, res) => {
 // edit book info by book id and author id
 booksRoute.patch('/books', (req, res) => {
     const {id, author_id, title, published_date, available_copies} = req.body;
+
+    audit_log('edit book', 'edit book called with id: ' + id);
     
     db.get('SELECT COUNT(*) FROM books WHERE id = ? AND author_id = ?', [id, author_id], (err, row) => {
         if(err) {
@@ -103,6 +111,8 @@ booksRoute.patch('/books', (req, res) => {
 // delete book with id, with admin password
 booksRoute.delete('/books', (req, res) => {
     const {id, passcode} = req.body;
+
+    audit_log('Delete book', 'Delete book called with id: ' + id);
 
     if(passcode !== process.env.ADMIN_PASSWORD) {
         return res.status(403).json({
