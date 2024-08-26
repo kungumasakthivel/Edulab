@@ -4,6 +4,47 @@ const db = require('../database');
 const borrowRoute = express.Router();
 require('dotenv').config();
 
+function borrowBook(id, user_id, borrow_date, due_date) {
+    const result = db.run(
+        `INSERT INTO borrow_records (user_id, book_id, borrow_date, due_date)
+        VALUES (?, ?, ?, ?)`,
+        [user_id, id, borrow_date, due_date],
+        function(err) {
+            if(err) {
+                return "Not inserted in borrow_records"
+            }
+            return "successfully inserted in borrow_records";
+        }
+    );
+    return result;
+}
+
+function returnBook(id, return_date) {
+    const result = db.get(
+        `SELECT COUNT(*) FROM borrow_records WHERE book_id = ?`, [id], (err, row) => {
+            if(err) {
+                return res.status(400).json({
+                    message: "No author with id: " + id,
+                    status: 0
+                });
+            }
+            if(row['COUNT(*)'] > 0) {
+                db.run(
+                    `UPDATE borrow_records SET return_date = ? WHERE id = ?`,
+                    [return_date, id],
+                    function(err) {
+                        if(err) {
+                            return "unsuccessfull borrow_records";
+                        }
+                        return "Successfully borrow_records returned book id: " + id;
+                    }
+                )
+            }
+        }
+    );
+    return result;
+}
+
 // check book is availabel
 borrowRoute.get('/available-books', (req, res) => {
 
@@ -113,7 +154,7 @@ borrowRoute.patch('/available-books', (req, res) => {
 
 // borrow book
 borrowRoute.patch('/borrow-book', (req, res) => {
-    const {id, passcode} = req.body;
+    const {id, passcode, user_id, borrow_date, due_date} = req.body;
 
     if(passcode !== process.env.ADMIN_PASSWORD) {
         return res.status(404).json({
@@ -122,12 +163,14 @@ borrowRoute.patch('/borrow-book', (req, res) => {
         });
     }
 
-    if(!id) {
+    if(!id || !user_id || !borrow_date || !due_date) {
         return res.status(400).json({
-            message: "Bad request: Invalid input, information are missing [id]",
+            message: "Bad request: Invalid input, information are missing",
             status: 0
         });
     }
+
+    const result = borrowBook(id, user_id, borrow_date, due_date);
 
     db.get(
         'SELECT available_copies FROM books WHERE id = ? AND available_copies > 1',
@@ -151,7 +194,7 @@ borrowRoute.patch('/borrow-book', (req, res) => {
                             });
                         }
                         res.status(200).json({
-                            message: "Borrowed BOok successfully",
+                            message: "Borrowed BOok successfully, " + result,
                             status: 1
                         });
                     }
@@ -168,7 +211,7 @@ borrowRoute.patch('/borrow-book', (req, res) => {
 
 // return book, increase book count
 borrowRoute.patch('/return-book', (req, res) => {
-    const {id, passcode} = req.body;
+    const {id, passcode, return_date} = req.body;
     
     if(passcode !== process.env.ADMIN_PASSWORD) {
         return res.status(404).json({
@@ -177,12 +220,14 @@ borrowRoute.patch('/return-book', (req, res) => {
         });
     }
 
-    if(!id) {
+    if(!id || !return_date) {
         return res.status(400).json({
             message: "Bad request: Invalid input, information are missing [id]",
             status: 0
         });
     }
+
+    const result = returnBook(id, return_date);
 
     db.get(
         'SELECT available_copies FROM books WHERE id = ?',
@@ -206,14 +251,14 @@ borrowRoute.patch('/return-book', (req, res) => {
                             });
                         }
                         res.status(200).json({
-                            message: "Book returned successfully",
+                            message: "Book returned successfully, " + result,
                             status: 1
                         });
                     }
                 );
             } else {
                 return res.status(404).json({
-                    message: "book not returned",
+                    message: "book not returned " + result,
                     status: 0
                 });
             }
